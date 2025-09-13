@@ -150,13 +150,13 @@ const buildEventQuery = (filters = {}) => {
   }
 
   if (filters.startDate) {
-    query += ` AND e.start_date >= $${paramIndex}`;
+    query += ` AND e.start_datetime >= $${paramIndex}`;
     params.push(filters.startDate);
     paramIndex++;
   }
 
   if (filters.endDate) {
-    query += ` AND e.end_date <= $${paramIndex}`;
+    query += ` AND e.end_datetime <= $${paramIndex}`;
     params.push(filters.endDate);
     paramIndex++;
   }
@@ -183,23 +183,23 @@ const formatEventData = (event) => {
     id: event.id,
     title: event.title,
     description: event.description,
+    short_description: event.short_description,
     category: event.category,
-    venue: event.venue,
-    address: event.address,
-    city: event.city,
-    state: event.state,
-    country: event.country,
-    zipCode: event.zip_code,
-    startDate: event.start_date,
-    endDate: event.end_date,
-    capacity: event.capacity,
-    isPublic: event.is_public,
-    requiresApproval: event.requires_approval,
-    allowRefunds: event.allow_refunds,
-    refundPolicy: event.refund_policy,
+    venue_name: event.venue_name,
+    venue_address: event.venue_address,
+    venue_city: event.venue_city,
+    venue_state: event.venue_state,
+    venue_country: event.venue_country,
+    venue_postal_code: event.venue_postal_code,
+    start_datetime: event.start_datetime,
+    end_datetime: event.end_datetime,
+    venue_capacity: event.venue_capacity,
+    is_public: event.is_public,
     status: event.status,
-    imageUrl: event.image_url,
-    organizerId: event.organizer_id,
+    featured_image: event.featured_image,
+    organizer_id: event.organizer_id,
+    min_price: event.min_price,
+    max_price: event.max_price,
     organizer: {
       firstName: event.organizer_first_name,
       lastName: event.organizer_last_name,
@@ -253,9 +253,9 @@ router.get('/', async (req, res) => {
       sqlQuery += ` ORDER BY total_tickets_sold DESC`;
     } else if (nearby === 'true' && req.query.lat && req.query.lng) {
       // Add location-based sorting (requires PostGIS or similar)
-      sqlQuery += ` ORDER BY e.start_date ASC`;
+      sqlQuery += ` ORDER BY e.start_datetime ASC`;
     } else {
-      sqlQuery += ` ORDER BY e.start_date ASC`;
+      sqlQuery += ` ORDER BY e.start_datetime ASC`;
     }
 
     sqlQuery += ` LIMIT ? OFFSET ?`;
@@ -266,11 +266,10 @@ router.get('/', async (req, res) => {
 
     // Get total count for pagination
     const countQuery = buildEventQuery(filters);
-    const countResult = await query(
-      `SELECT COUNT(DISTINCT e.id) as total ${countQuery.query.substring(countQuery.query.indexOf('FROM'))}`,
-      countQuery.params
-    );
-    const total = parseInt(countResult.rows[0].total);
+    const countSql = `SELECT COUNT(DISTINCT e.id) as total ${countQuery.query.substring(countQuery.query.indexOf('FROM'))}`;
+    const countResult = await query(countSql, countQuery.params);
+    
+    const total = parseInt(countResult.rows[0]?.total || 0);
 
     logger.info('Events listed', { 
       filters,
@@ -380,7 +379,7 @@ router.get('/search', async (req, res) => {
     };
 
     let { query: sqlQuery, params } = buildEventQuery(filters);
-    sqlQuery += ` ORDER BY e.start_date ASC LIMIT ? OFFSET ?`;
+    sqlQuery += ` ORDER BY e.start_datetime ASC LIMIT ? OFFSET ?`;
     params.push(parseInt(limit), offset);
 
     const result = await query(sqlQuery, params);

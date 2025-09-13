@@ -699,7 +699,8 @@ class FastRobustTicketingApp {
       const response = await fetch('/api/events');
       if (response.ok) {
         const data = await response.json();
-        this.displayEvents(data.data || data);
+        console.log('API Response:', data); // Debug log
+        this.displayEvents(data.events || data.data || data);
         this.updateLastRefreshed();
       } else {
         throw new Error('Failed to load events');
@@ -741,7 +742,7 @@ class FastRobustTicketingApp {
     });
 
     // Get price range (you might need to adjust this based on your data structure)
-    const priceText = event.price_min ? `From $${event.price_min}` : 'Free';
+    const priceText = event.min_price ? `From $${event.min_price}` : 'Free';
 
     return `
       <div class="event-card" onclick="app.openEventDetails('${event.id}')">

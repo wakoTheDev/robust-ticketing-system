@@ -219,6 +219,7 @@ const createSQLiteTables = async () => {
         end_datetime DATETIME NOT NULL,
         timezone TEXT DEFAULT 'UTC',
         status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'cancelled', 'completed')),
+        is_public BOOLEAN DEFAULT TRUE,
         featured_image TEXT,
         gallery_images TEXT DEFAULT '[]',
         tags TEXT,
@@ -232,6 +233,7 @@ const createSQLiteTables = async () => {
         seo_title TEXT,
         seo_description TEXT,
         seo_keywords TEXT,
+        deleted_at DATETIME,
         created_at DATETIME DEFAULT (datetime('now')),
         updated_at DATETIME DEFAULT (datetime('now'))
       )
@@ -346,9 +348,34 @@ const createSQLiteTables = async () => {
     await db.exec('CREATE INDEX IF NOT EXISTS idx_analytics_created ON analytics_events(created_at)');
 
     logger.info('SQLite database tables created successfully');
+    
+    // Add missing columns if they don't exist (for existing databases)
+    await addMissingColumns();
   } catch (error) {
     logger.error('Error creating SQLite database tables:', error);
     throw error;
+  }
+};
+
+const addMissingColumns = async () => {
+  try {
+    // Check if is_public column exists, if not add it
+    const tableInfo = await db.all("PRAGMA table_info(events)");
+    const hasIsPublic = tableInfo.some(col => col.name === 'is_public');
+    const hasDeletedAt = tableInfo.some(col => col.name === 'deleted_at');
+    
+    if (!hasIsPublic) {
+      await db.exec('ALTER TABLE events ADD COLUMN is_public BOOLEAN DEFAULT TRUE');
+      logger.info('Added is_public column to events table');
+    }
+    
+    if (!hasDeletedAt) {
+      await db.exec('ALTER TABLE events ADD COLUMN deleted_at DATETIME');
+      logger.info('Added deleted_at column to events table');
+    }
+  } catch (error) {
+    logger.error('Error adding missing columns:', error);
+    // Don't throw - this is non-critical for new installations
   }
 };
 
