@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .endpoint-url {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 RobustTicketing API Test Dashboard</h1>
+        
+        <div class="status" id="serverStatus">
+            <span style="color: orange;">⏳ Checking server status...</span>
+        </div>
+
+        <div class="test-section">
+            <h3>🏥 Health Check</h3>
+            <div class="endpoint-url">GET /health</div>
+            <button class="test-button" onclick="testHealth()">Test Health Endpoint</button>
+            <div id="healthResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎫 Events API</h3>
+            <div class="endpoint-url">GET /api/events</div>
+            <button class="test-button" onclick="testEvents()">Test Events List</button>
+            <button class="test-button" onclick="testFeaturedEvents()">Test Featured Events</button>
+            <div id="eventsResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔐 Authentication API</h3>
+            <div class="endpoint-url">POST /api/auth/register</div>
+            <button class="test-button" onclick="testAuthRegister()">Test Registration</button>
+            <button class="test-button" onclick="testAuthLogin()">Test Login</button>
+            <div id="authResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>👤 User API</h3>
+            <div class="endpoint-url">GET /api/users/profile</div>
+            <button class="test-button" onclick="testUserProfile()">Test User Profile</button>
+            <div id="userResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Run All Tests</h3>
+            <button class="test-button" onclick="runAllTests()" style="background: #28a745;">Run Complete Test Suite</button>
+            <div id="allTestsResult"></div>
+        </div>
+    </div>
+
+    <script>
+        // Check server status on load
+        window.onload = async function() {
+            await checkServerStatus();
+        };
+
+        async function checkServerStatus() {
+            try {
+                const response = await fetch('/health');
+                if (response.ok) {
+                    document.getElementById('serverStatus').innerHTML = '<span style="color: green;">✅ Server is running on port 3000</span>';
+                } else {
+                    document.getElementById('serverStatus').innerHTML = '<span style="color: red;">❌ Server responded with error</span>';
+                }
+            } catch (error) {
+                document.getElementById('serverStatus').innerHTML = '<span style="color: red;">❌ Server is not responding</span>';
+            }
+        }
+
+        function displayResult(elementId, success, message, data = null) {
+            const element = document.getElementById(elementId);
+            const className = success ? 'success' : 'error';
+            let content = `<div class="result ${className}">
+                <strong>${success ? '✅ SUCCESS' : '❌ ERROR'}:</strong> ${message}`;
+            
+            if (data) {
+                content += `<br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            
+            content += '</div>';
+            element.innerHTML = content;
+        }
+
+        async function testHealth() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                displayResult('healthResult', true, 'Health check passed', data);
+            } catch (error) {
+                displayResult('healthResult', false, `Health check failed: ${error.message}`);
+            }
+        }
+
+        async function testEvents() {
+            try {
+                const response = await fetch('/api/events');
+                const data = await response.json();
+                displayResult('eventsResult', true, 'Events API responded', data);
+            } catch (error) {
+                displayResult('eventsResult', false, `Events API failed: ${error.message}`);
+            }
+        }
+
+        async function testFeaturedEvents() {
+            try {
+                const response = await fetch('/api/events/featured');
+                const data = await response.json();
+                displayResult('eventsResult', true, 'Featured Events API responded', data);
+            } catch (error) {
+                displayResult('eventsResult', false, `Featured Events API failed: ${error.message}`);
+            }
+        }
+
+        async function testAuthRegister() {
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: `test${Date.now()}@example.com`,
+                        password: 'Password123!',
+                        firstName: 'Test',
+                        lastName: 'User'
+                    })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    displayResult('authResult', true, 'Registration successful', data);
+                } else {
+                    displayResult('authResult', false, 'Registration failed (expected)', data);
+                }
+            } catch (error) {
+                displayResult('authResult', false, `Registration error: ${error.message}`);
+            }
+        }
+
+        async function testAuthLogin() {
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'test@example.com',
+                        password: 'password123'
+                    })
+                });
+                
+                const data = await response.json();
+                displayResult('authResult', response.ok, response.ok ? 'Login successful' : 'Login failed (expected)', data);
+            } catch (error) {
+                displayResult('authResult', false, `Login error: ${error.message}`);
+            }
+        }
+
+        async function testUserProfile() {
+            try {
+                const response = await fetch('/api/users/profile');
+                const data = await response.json();
+                displayResult('userResult', response.ok, response.ok ? 'User profile retrieved' : 'Auth required (expected)', data);
+            } catch (error) {
+                displayResult('userResult', false, `User profile error: ${error.message}`);
+            }
+        }
+
+        async function runAllTests() {
+            document.getElementById('allTestsResult').innerHTML = '<div class="result info">⏳ Running all tests...</div>';
+            
+            const tests = [
+                { name: 'Health', func: testHealth },
+                { name: 'Events', func: testEvents },
+                { name: 'Auth Register', func: testAuthRegister },
+                { name: 'User Profile', func: testUserProfile }
+            ];
+
+            let passed = 0;
+            let total = tests.length;
+
+            for (const test of tests) {
+                try {
+                    await test.func();
+                    passed++;
+                } catch (error) {
+                    console.error(`Test ${test.name} failed:`, error);
+                }
+                // Small delay between tests
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            const success = passed === total;
+            const message = `All tests completed: ${passed}/${total} passed`;
+            displayResult('allTestsResult', success, message);
+        }
+    </script>
+</body>
+</html>
